@@ -1,0 +1,12 @@
+{
+    "initial_bot_message": "Hello, I'm SmartInstruct. How can I help you?",
+    "functions": ["Introduce the company", "Provide product information", "Answer FAQs", "Schedule appointments", "Collect user feedback"],
+    "response_templates": {
+        "greeting": "Hello! How can I assist you today?",
+        "company_intro": "We are a leading company in the industry, committed to providing top-notch services and products.",
+        "product_info": "Our products are designed to meet your needs. You can find detailed information on our website or ask me specific questions.",
+        "faq_response": "Here are some frequently asked questions: [List of FAQs]. If you have any other questions, feel free to ask!",
+        "appointment_schedule": "I can help you schedule an appointment. Please provide your preferred date and time.",
+        "feedback_request": "We value your feedback! Please share your thoughts and suggestions with us."
+    }
+}
