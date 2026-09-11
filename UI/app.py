@@ -1,6 +1,6 @@
 import streamlit as st
 
-from account import login_user, register_user
+from src.account import login_user, register_user
 from src.recommendation import travel_chatbot
 
 
