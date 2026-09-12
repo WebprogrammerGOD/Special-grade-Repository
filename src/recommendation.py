@@ -1,4 +1,5 @@
 import os
+from typing import TYPE_CHECKING
 
 import google.generativeai as genai
 import streamlit as st
@@ -6,6 +7,9 @@ from dotenv import load_dotenv
 
 from src.preprocessing import BASE_DIR, load_datasets, load_json
 from src.utils import detect_request, format_table, search_dataframe
+
+if TYPE_CHECKING:
+    from src.storage import ChatStorage
 
 
 # Load environment variables from env/code.env
@@ -132,7 +136,7 @@ except Exception as exc:
     st.stop()
 
 
-def travel_chatbot():
+def travel_chatbot(storage: "ChatStorage | None" = None):
     st.title("✈️ Viejar Mucho Travel Chatbot")
     st.caption(
         "Ask about hotels, plane tickets, travel destinations, "
@@ -140,7 +144,8 @@ def travel_chatbot():
     )
 
     if "conversation_log" not in st.session_state:
-        st.session_state.conversation_log = [
+        saved_history = storage.get_history() if storage else []
+        st.session_state.conversation_log = saved_history or [
             {
                 "role": "assistant",
                 "content": initial_bot_message,
@@ -154,6 +159,8 @@ def travel_chatbot():
             "🗑️ Clear conversation",
             use_container_width=True,
         ):
+            if storage:
+                storage.clear()
             st.session_state.conversation_log = [
                 {
                     "role": "assistant",
@@ -211,10 +218,7 @@ def travel_chatbot():
                     "Available accommodations",
                 )
             else:
-                bot_reply = (
-                    "### Available accommodations\n"
-                    "No matching hotels were found."
-                )
+                bot_reply = (prompt)
 
         elif request_type == "plane":
             result = search_dataframe(
@@ -235,10 +239,7 @@ def travel_chatbot():
                     "Available plane tickets",
                 )
             else:
-                bot_reply = (
-                    "### Available plane tickets\n"
-                    "No matching flight routes were found."
-                )
+                bot_reply = model.generate_content(prompt)
 
         elif request_type == "travel":
             result = search_dataframe(
@@ -259,10 +260,7 @@ def travel_chatbot():
                     "Available travel destinations",
                 )
             else:
-                bot_reply = (
-                    "### Available travel destinations\n"
-                    "No matching destinations were found."
-                )
+                bot_reply = (prompt)
 
         elif request_type == "company":
             bot_reply = (
@@ -319,3 +317,6 @@ def travel_chatbot():
             "content": bot_reply,
         }
     )
+
+    if storage:
+        storage.save_exchange(prompt, str(bot_reply))

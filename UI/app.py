@@ -1,3 +1,6 @@
+import hashlib
+from pathlib import Path
+
 import streamlit as st
 
 from src.account import login_user, register_user
@@ -10,6 +13,13 @@ def _init_auth_state():
         st.session_state.authenticated = False
     if "user" not in st.session_state:
         st.session_state.user = None
+
+
+def _chat_storage_for_user(username: str) -> ChatStorage:
+    """Return the saved-chat location associated with one account."""
+    user_key = hashlib.sha256(username.casefold().encode("utf-8")).hexdigest()
+    project_root = Path(__file__).resolve().parents[1]
+    return ChatStorage(project_root / "data" / "chat_history" / f"{user_key}.json")
 
 
 def _show_auth_page():
@@ -37,6 +47,7 @@ def _show_auth_page():
                 if success:
                     st.session_state.authenticated = True
                     st.session_state.user = result
+                    st.session_state.pop("conversation_log", None)
                     st.rerun()
                 else:
                     st.error(result)
@@ -96,9 +107,11 @@ def main():
         if st.button("Đăng xuất", use_container_width=True):
             st.session_state.authenticated = False
             st.session_state.user = None
+            st.session_state.pop("conversation_log", None)
             st.rerun()
 
-    travel_chatbot()
+    storage = _chat_storage_for_user(username)
+    travel_chatbot(storage)
 
 
 if __name__ == "__main__":

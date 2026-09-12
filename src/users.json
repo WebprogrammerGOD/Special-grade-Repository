@@ -3,5 +3,10 @@
     "username": "sigma",
     "salt": "247224ef88ba0778132bfc5a63d00475",
     "password_hash": "291b3e1bf78210bd0c7db03aa30692f4a0e82e1b6f32939dec6219d9c13ce28c"
+  },
+  "bitch": {
+    "username": "bitch",
+    "salt": "8141a92c95ec15bf08a500e9a184e698",
+    "password_hash": "79e16e071172eee64aa59463bbe86cac7f0a571e4c3d7e0155b8cdc6a17c18a7"
   }
 }
