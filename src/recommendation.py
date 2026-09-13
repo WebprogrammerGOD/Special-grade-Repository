@@ -5,7 +5,7 @@ import google.generativeai as genai
 import streamlit as st
 from dotenv import load_dotenv
 
-from src.preprocessing import BASE_DIR, load_datasets, load_json
+from src.preprocessing import BASE_DIR, load_excel, load_csv, load_json
 from src.utils import detect_request, format_table, search_dataframe
 
 if TYPE_CHECKING:
@@ -47,9 +47,20 @@ initial_bot_message = config.get(
 functions = config.get("function", "travel assistance")
 
 try:
-    travel_df, hotel_df, plane_df = load_datasets()
+    # The travel-history CSV is deliberately not loaded here. Destination
+    # requests are recommendations based on the user's prompt, not searches
+    # through historical trips in "Travel details dataset.csv".
+    hotel_df = load_csv(
+        "Yerevan-Hotels.csv",
+        encoding="utf-8",
+        index_col=0,
+    )
+    plane_df = load_excel(
+        "Data_Train.xlsx",
+        index_col=0,
+    )
 except (FileNotFoundError, ValueError, KeyError, OSError) as exc:
-    st.error(f"Cannot load one of the travel datasets: {exc}")
+    st.error(f"Cannot load one of the service datasets: {exc}")
     st.stop()
 
 
@@ -78,19 +89,6 @@ routes = (
     else "Available flight route data"
 )
 
-destinations = (
-    ", ".join(
-        travel_df["Destination"]
-        .dropna()
-        .astype(str)
-        .head(50)
-        .tolist()
-    )
-    if "Destination" in travel_df.columns
-    else "Available destination data"
-)
-
-
 system_instruction = f"""
 You are SmartInstruct, the travel assistant for Viejar Mucho.
 
@@ -113,13 +111,12 @@ Examples of known hotels:
 Examples of known flight routes:
 {routes}
 
-Examples of known destinations:
-{destinations}
-
 Rules:
 - Be polite, concise, and useful.
-- Do not invent prices, routes, hotels, or destinations.
+- Do not invent prices, routes, or hotels.
 - When the application provides database results, use those results instead of guessing.
+- For travel-planning requests, recommend destinations from the user's stated
+  preferences. Never use or refer to the Travel details dataset.csv file.
 - For unsupported requests, say:
   "I do not support this function. Please contact our company's staff via hotline +5251 - 234 - 5678 for assistance."
 """
@@ -241,25 +238,27 @@ def travel_chatbot(storage: "ChatStorage | None" = None):
                 bot_reply = model.generate_content(prompt)
 
         elif request_type == "travel":
-            result = search_dataframe(
-                travel_df,
-                prompt,
-                ["Destination", "Transportation", "Region", "Country"],
-                limit=8,
-            )
-
-            if not result.empty:
-                bot_reply = format_table(
-                    result,
-                    [
-                        ("Destination", "Destination"),
-                        ("Transportation cost", "Transportation cost"),
-                        ("Transportation", "Transportation"),
-                    ],
-                    "Available travel destinations",
+            # Destination advice is intentionally generated from the user's
+            # request rather than matched against Travel details dataset.csv.
+            try:
+                response = model.generate_content(
+                    "Recommend 3 suitable travel destinations for this user. "
+                    "Use only the preferences and constraints in their message. "
+                    "For each destination, give a brief reason it fits and one "
+                    "practical consideration. Do not claim live prices, current "
+                    "availability, or that the choices came from a dataset.\n\n"
+                    f"User's trip request: {prompt}"
                 )
-            else:
-                bot_reply = model.generate_content(prompt)
+                bot_reply = (
+                    response.text.strip()
+                    if response.text
+                    else "I could not generate destination recommendations."
+                )
+            except Exception as exc:
+                bot_reply = (
+                    "Sorry, I couldn't generate destination recommendations right now. "
+                    f"Please try again later. Details: {exc}"
+                )
 
         elif request_type == "company":
             bot_reply = (

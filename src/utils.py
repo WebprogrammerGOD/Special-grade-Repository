@@ -108,6 +108,34 @@ def detect_request(prompt: str) -> str:
     """
     text = normalize_text(prompt)
 
+    # A trip-planning prompt can mention a hotel or flight as a constraint.
+    # Detect it before those secondary services so it receives destination
+    # recommendations rather than a dataset lookup.
+    if contains_any(
+        text,
+        (
+            "travel",
+            "destination",
+            "trip",
+            "tour",
+            "place",
+            "vacation",
+            "holiday",
+            "getaway",
+            "visit",
+            "explore",
+            "where to go",
+            "where should i go",
+            "where should we go",
+            "recommend somewhere",
+            "recommend a place",
+            "suggest a destination",
+            "plan a trip",
+            "transportation",
+        ),
+    ):
+        return "travel"
+
     if contains_any(
         text,
         (
@@ -147,6 +175,18 @@ def detect_request(prompt: str) -> str:
             "trip",
             "tour",
             "place",
+            "vacation",
+            "holiday",
+            "getaway",
+            "visit",
+            "explore",
+            "where to go",
+            "where should i go",
+            "where should we go",
+            "recommend somewhere",
+            "recommend a place",
+            "suggest a destination",
+            "plan a trip",
             "transportation",
             "du lịch",
             "điểm đến",
