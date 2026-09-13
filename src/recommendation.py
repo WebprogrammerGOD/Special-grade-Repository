@@ -11,7 +11,6 @@ from src.utils import detect_request, format_table, search_dataframe
 if TYPE_CHECKING:
     from src.storage import ChatStorage
 
-
 # Load environment variables from env/code.env
 load_dotenv(BASE_DIR / ".env")
 
@@ -218,7 +217,7 @@ def travel_chatbot(storage: "ChatStorage | None" = None):
                     "Available accommodations",
                 )
             else:
-                bot_reply = (prompt)
+                bot_reply = model.generate_content(prompt)
 
         elif request_type == "plane":
             result = search_dataframe(
@@ -260,7 +259,7 @@ def travel_chatbot(storage: "ChatStorage | None" = None):
                     "Available travel destinations",
                 )
             else:
-                bot_reply = (prompt)
+                bot_reply = model.generate_content(prompt)
 
         elif request_type == "company":
             bot_reply = (
