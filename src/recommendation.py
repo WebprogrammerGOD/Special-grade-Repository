@@ -5,14 +5,15 @@ import google.generativeai as genai
 import streamlit as st
 from dotenv import load_dotenv
 
-from src.preprocessing import BASE_DIR, load_excel, load_csv, load_json
+from src.preprocessing import BASE_DIR, CONFIG_DIR, load_excel, load_csv, load_json
 from src.utils import detect_request, format_table, search_dataframe
 
 if TYPE_CHECKING:
     from src.storage import ChatStorage
 
-# Load environment variables from env/code.env
-load_dotenv(BASE_DIR / ".env")
+# Credentials are local configuration and must not be committed in source code.
+# Process environment variables take precedence over values in config/.env.
+load_dotenv(CONFIG_DIR / ".env")
 
 st.set_page_config(
     page_title="Viejar Mucho Travel Chatbot",
@@ -20,12 +21,12 @@ st.set_page_config(
     layout="wide",
 )
 
-GOOGLE_API_KEY = "AQ.Ab8RN6IRpLyDQjYm38_Rvy2X0q2cCEIY_pcXZ4vODYcOfFHqkQ"
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 if not GOOGLE_API_KEY:
     st.error(
-        "Google API key is missing. Set GOOGLE_API_KEY in "
-        "env/code.env or Streamlit Secrets before running the application."
+        "Google API key is missing. Add GOOGLE_API_KEY to config/.env "
+        "(see config/.env.example) or set it as an environment variable."
     )
     st.stop()
 

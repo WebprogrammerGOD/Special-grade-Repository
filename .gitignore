@@ -1,0 +1,7 @@
+# Local credentials
+config/.env
+.env
+
+# Python runtime files
+__pycache__/
+*.py[cod]
