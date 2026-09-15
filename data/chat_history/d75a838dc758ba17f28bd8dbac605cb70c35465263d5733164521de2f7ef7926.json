@@ -1,12 +1,12 @@
 [
   {
     "role": "user",
-    "content": "Recommend me where should we go?",
-    "timestamp": "2026-09-13T09:51:55.790603+00:00"
+    "content": "Recommend me where to stay?",
+    "timestamp": "2026-09-15T07:46:44.049338+00:00"
   },
   {
     "role": "assistant",
     "content": "Sorry, I couldn't generate destination recommendations right now. Please try again later. Details: 401 Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [reason: \"ACCESS_TOKEN_TYPE_UNSUPPORTED\"\nmetadata {\n  key: \"service\"\n  value: \"generativelanguage.googleapis.com\"\n}\nmetadata {\n  key: \"method\"\n  value: \"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent\"\n}\n]",
-    "timestamp": "2026-09-13T09:51:55.808307+00:00"
+    "timestamp": "2026-09-15T07:46:44.057465+00:00"
   }
 ]

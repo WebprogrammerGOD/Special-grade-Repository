@@ -5,8 +5,8 @@ import google.generativeai as genai
 import streamlit as st
 from dotenv import load_dotenv
 
-from src.preprocessing import BASE_DIR, CONFIG_DIR, load_excel, load_csv, load_json
-from src.utils import detect_request, format_table, search_dataframe
+from src.preprocessing import BASE_DIR, CONFIG_DIR, load_json
+from src.utils import detect_request
 
 if TYPE_CHECKING:
     from src.storage import ChatStorage
@@ -33,7 +33,7 @@ if not GOOGLE_API_KEY:
 genai.configure(api_key=GOOGLE_API_KEY)
 
 
-# Load configuration and datasets
+# Load configuration
 try:
     config = load_json("config.json")
 except (FileNotFoundError, ValueError, OSError) as exc:
@@ -47,49 +47,6 @@ initial_bot_message = config.get(
 
 functions = config.get("function", "travel assistance")
 
-try:
-    # The travel-history CSV is deliberately not loaded here. Destination
-    # requests are recommendations based on the user's prompt, not searches
-    # through historical trips in "Travel details dataset.csv".
-    hotel_df = load_csv(
-        "Yerevan-Hotels.csv",
-        encoding="utf-8",
-        index_col=0,
-    )
-    plane_df = load_excel(
-        "Data_Train.xlsx",
-        index_col=0,
-    )
-except (FileNotFoundError, ValueError, KeyError, OSError) as exc:
-    st.error(f"Cannot load one of the service datasets: {exc}")
-    st.stop()
-
-
-# Prepare database examples for Gemini's system instruction
-hotel_names = (
-    ", ".join(
-        hotel_df["Hotel Names"]
-        .dropna()
-        .astype(str)
-        .head(50)
-        .tolist()
-    )
-    if "Hotel Names" in hotel_df.columns
-    else "Available hotel data"
-)
-
-routes = (
-    ", ".join(
-        plane_df["Route"]
-        .dropna()
-        .astype(str)
-        .head(50)
-        .tolist()
-    )
-    if "Route" in plane_df.columns
-    else "Available flight route data"
-)
-
 system_instruction = f"""
 You are SmartInstruct, the travel assistant for Viejar Mucho.
 
@@ -99,25 +56,20 @@ Company:
 
 Supported functions:
 1. Introduce the company.
-2. Accommodation information.
-3. Plane ticket / flight route information.
+2. Recommend travel destinations from accommodation preferences.
+3. Recommend travel destinations from plane-ticket preferences.
 4. Travel destination information.
 5. Help explain the supported travel services.
 
 Configured function: {functions}
 
-Examples of known hotels:
-{hotel_names}
-
-Examples of known flight routes:
-{routes}
-
 Rules:
 - Be polite, concise, and useful.
-- Do not invent prices, routes, or hotels.
-- When the application provides database results, use those results instead of guessing.
-- For travel-planning requests, recommend destinations from the user's stated
-  preferences. Never use or refer to the Travel details dataset.csv file.
+- For travel-planning, hotel-booking, and plane-ticket requests, recommend
+  destinations from the user's stated preferences and constraints.
+- Never use, search, or refer to local travel, hotel, or flight datasets.
+- Do not claim live prices, booking availability, flight schedules, or hotel
+  availability.
 - For unsupported requests, say:
   "I do not support this function. Please contact our company's staff via hotline +5251 - 234 - 5678 for assistance."
 """
@@ -133,11 +85,41 @@ except Exception as exc:
     st.stop()
 
 
+def generate_destination_recommendations(prompt: str, request_type: str) -> str:
+    """Generate destination advice without querying local booking datasets."""
+    request_context = {
+        "hotel": "The user is asking about a hotel or accommodation booking.",
+        "plane": "The user is asking about a plane ticket or flight booking.",
+        "travel": "The user is planning a trip.",
+    }[request_type]
+
+    try:
+        response = model.generate_content(
+            "Recommend 3 suitable travel destinations for this user. "
+            f"{request_context} Treat booking details as travel preferences, "
+            "not as a request to search hotels, flights, prices, or availability. "
+            "For each destination, give a brief reason it fits and one practical "
+            "consideration. Do not claim live prices or availability, and do not "
+            "say the choices came from a dataset.\n\n"
+            f"User's request: {prompt}"
+        )
+        return (
+            response.text.strip()
+            if response.text
+            else "I could not generate destination recommendations."
+        )
+    except Exception as exc:
+        return (
+            "Sorry, I couldn't generate destination recommendations right now. "
+            f"Please try again later. Details: {exc}"
+        )
+
+
 def travel_chatbot(storage: "ChatStorage | None" = None):
     st.title("✈️ Viejar Mucho Travel Chatbot")
     st.caption(
-        "Ask about hotels, plane tickets, travel destinations, "
-        "or Viejar Mucho company information."
+        "Tell me your hotel, flight, or trip preferences and I will recommend "
+        "travel destinations."
     )
 
     if "conversation_log" not in st.session_state:
@@ -194,72 +176,9 @@ def travel_chatbot(storage: "ChatStorage | None" = None):
 
     request_type = detect_request(prompt)
 
-    with st.spinner("🤖 Searching for valid data..."):
-        if request_type == "hotel":
-            result = search_dataframe(
-                hotel_df,
-                prompt,
-                ["Hotel Names", "City", "Country"],
-                limit=8,
-            )
-
-            if not result.empty:
-                bot_reply = format_table(
-                    result,
-                    [
-                        ("Hotel Names", "Hotel"),
-                        ("Price", "Price"),
-                        ("City", "City"),
-                        ("Country", "Country"),
-                    ],
-                    "Available accommodations",
-                )
-            else:
-                bot_reply = model.generate_content(prompt)
-
-        elif request_type == "plane":
-            result = search_dataframe(
-                plane_df,
-                prompt,
-                ["Route", "Airline"],
-                limit=8,
-            )
-
-            if not result.empty:
-                bot_reply = format_table(
-                    result,
-                    [
-                        ("Route", "Route"),
-                        ("Price", "Price"),
-                        ("Airline", "Airline"),
-                    ],
-                    "Available plane tickets",
-                )
-            else:
-                bot_reply = model.generate_content(prompt)
-
-        elif request_type == "travel":
-            # Destination advice is intentionally generated from the user's
-            # request rather than matched against Travel details dataset.csv.
-            try:
-                response = model.generate_content(
-                    "Recommend 3 suitable travel destinations for this user. "
-                    "Use only the preferences and constraints in their message. "
-                    "For each destination, give a brief reason it fits and one "
-                    "practical consideration. Do not claim live prices, current "
-                    "availability, or that the choices came from a dataset.\n\n"
-                    f"User's trip request: {prompt}"
-                )
-                bot_reply = (
-                    response.text.strip()
-                    if response.text
-                    else "I could not generate destination recommendations."
-                )
-            except Exception as exc:
-                bot_reply = (
-                    "Sorry, I couldn't generate destination recommendations right now. "
-                    f"Please try again later. Details: {exc}"
-                )
+    with st.spinner("🤖 Creating destination recommendations..."):
+        if request_type in {"hotel", "plane", "travel"}:
+            bot_reply = generate_destination_recommendations(prompt, request_type)
 
         elif request_type == "company":
             bot_reply = (
