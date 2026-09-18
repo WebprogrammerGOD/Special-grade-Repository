@@ -16,11 +16,9 @@ if TYPE_CHECKING:
 # Process environment variables take precedence over values in config/.env.
 load_dotenv(CONFIG_DIR / ".env", override = True)
 
-st.set_page_config(
-    page_title="Viejar Mucho Travel Chatbot",
-    page_icon="✈️",
-    layout="wide",
-)
+# NOTE: st.set_page_config() may only be called once per session, and must be
+# the first Streamlit command run. app.py (the entry point that imports this
+# module) already calls it, so it must not be called again here.
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY" or "").strip().strip('"').strip("'")
 
@@ -192,7 +190,6 @@ def travel_chatbot(storage: "ChatStorage | None" = None):
                 "- ✈️ Plane tickets\n"
                 "- 🌎 Travel destinations"
             )
-            with st.chat_message("assistant"): st.markdown(bot_reply)
 
         else:
             recent_history = st.session_state.conversation_log[-6:]

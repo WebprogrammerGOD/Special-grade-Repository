@@ -18,7 +18,9 @@ def _init_auth_state():
 def _chat_storage_for_user(username: str) -> ChatStorage:
     """Return the saved-chat location associated with one account."""
     user_key = hashlib.sha256(username.casefold().encode("utf-8")).hexdigest()
-    project_root = Path(__file__).resolve().parents[1]
+    # app.py lives at the project root (it imports the "src" package), so the
+    # project root is this file's own directory, not its parent.
+    project_root = Path(__file__).resolve().parent
     return ChatStorage(project_root / "data" / "chat_history" / f"{user_key}.json")
 
 
