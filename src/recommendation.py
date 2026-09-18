@@ -1,7 +1,8 @@
 import os
 from typing import TYPE_CHECKING
 
-import google.generativeai as genai
+from google import genai
+from prompt_toolkit import prompt
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -21,7 +22,7 @@ st.set_page_config(
     layout="wide",
 )
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
     st.error(
@@ -30,7 +31,7 @@ if not GEMINI_API_KEY:
     )
     st.stop()
 
-
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Load configuration
 try:
@@ -74,16 +75,6 @@ Rules:
 """
 
 
-try:
-    model = genai.GenerativeModel(
-        "gemini-3-flash-preview",
-        system_instruction=system_instruction,
-    )
-except Exception as exc:
-    st.error(f"Cannot initialize Gemini model: {exc}")
-    st.stop()
-
-
 def generate_destination_recommendations(prompt: str, request_type: str) -> str:
     """Generate destination advice without querying local booking datasets."""
     request_context = {
@@ -93,14 +84,18 @@ def generate_destination_recommendations(prompt: str, request_type: str) -> str:
     }[request_type]
 
     try:
-        response = model.generate_content(
-            "Recommend 3 suitable travel destinations for this user. "
-            f"{request_context} Treat booking details as travel preferences, "
-            "not as a request to search hotels, flights, prices, or availability. "
-            "For each destination, give a brief reason it fits and one practical "
-            "consideration. Do not claim live prices or availability, and do not "
-            "say the choices came from a dataset.\n\n"
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=(
+                "Recommend 5 suitable travel destinations for this user. "
+                "Treat booking details as travel preferences, "
+                "not as a request to search hotels, flights, prices, or availability. "
+                "For each destination, give a brief reason it fits and one practical "
+                "consideration. Do not claim live prices or availability, and do not "
+                "say the choices came from a dataset.\n\n"
             f"User's request: {prompt}"
+            ),
+            config={"system_instruction": system_instruction},
         )
         return (
             response.text.strip()
@@ -208,9 +203,13 @@ def travel_chatbot(storage: "ChatStorage | None" = None):
             )
 
             try:
-                response = model.generate_content(
-                    f"Conversation context:\n{context}\n\n"
-                    f"User request:\n{prompt}"
+                response = client.models.generate_content(
+                    model="gemini-3-flash-preview",
+                    contents=(
+                        f"Conversation context:\n{context}\n\n"
+                        f"User request:\n{prompt}"
+                    ),
+                    config={"system_instruction": system_instruction},
                 )
 
                 bot_reply = (

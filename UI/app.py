@@ -22,9 +22,10 @@ def _chat_storage_for_user(username: str) -> ChatStorage:
     return ChatStorage(project_root / "data" / "chat_history" / f"{user_key}.json")
 
 
-def _show_auth_page():
-    st.title("✈️ Travel Chatbot")
+def _show_auth_controls():
+    """Render optional account controls without blocking guest chat."""
     st.subheader("Tài khoản")
+    st.caption("Bạn có thể hỏi ngay với tư cách khách. Đăng nhập để lưu lịch sử chat.")
 
     login_tab, register_tab = st.tabs(["Đăng nhập", "Đăng ký"])
 
@@ -92,25 +93,30 @@ def main():
 
     _init_auth_state()
 
-    # Chưa đăng nhập -> chỉ hiển thị trang đăng nhập/đăng ký.
-    if not st.session_state.authenticated:
-        _show_auth_page()
-        return
-
-    # Đã đăng nhập -> hiển thị tài khoản và chatbot.
-    user = st.session_state.user or {}
-    username = user.get("username", "User")
-
     with st.sidebar:
-        st.write(f"👤 **{username}**")
+        if st.session_state.authenticated:
+            user = st.session_state.user or {}
+            username = user.get("username", "User")
+            st.write(f"👤 **{username}**")
+            st.caption("Lịch sử chat của bạn đang được lưu.")
 
-        if st.button("Đăng xuất", use_container_width=True):
-            st.session_state.authenticated = False
-            st.session_state.user = None
-            st.session_state.pop("conversation_log", None)
-            st.rerun()
+            if st.button("Đăng xuất", use_container_width=True):
+                st.session_state.authenticated = False
+                st.session_state.user = None
+                # Do not show one account's chat history in a guest session.
+                st.session_state.pop("conversation_log", None)
+                st.rerun()
+        else:
+            _show_auth_controls()
 
-    storage = _chat_storage_for_user(username)
+    # Guests can use the chatbot for the current browser session. Only an
+    # authenticated account receives a ChatStorage instance, so only its
+    # questions and answers are written to disk.
+    storage = None
+    if st.session_state.authenticated:
+        username = (st.session_state.user or {}).get("username", "User")
+        storage = _chat_storage_for_user(username)
+
     travel_chatbot(storage)
 
 
