@@ -2,21 +2,11 @@
   {
     "role": "user",
     "content": "Recommend me where to travel",
-    "timestamp": "2026-09-18T12:38:56.324032+00:00"
+    "timestamp": "2026-09-18T13:07:42.704278+00:00"
   },
   {
     "role": "assistant",
-    "content": "Sorry, I couldn't generate destination recommendations right now. Please try again later. Details: 401 Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [reason: \"ACCESS_TOKEN_TYPE_UNSUPPORTED\"\nmetadata {\n  key: \"service\"\n  value: \"generativelanguage.googleapis.com\"\n}\nmetadata {\n  key: \"method\"\n  value: \"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent\"\n}\n]",
-    "timestamp": "2026-09-18T12:38:56.331615+00:00"
-  },
-  {
-    "role": "user",
-    "content": "Recommend me where to stay?",
-    "timestamp": "2026-09-18T12:39:19.516255+00:00"
-  },
-  {
-    "role": "assistant",
-    "content": "Sorry, I couldn't generate destination recommendations right now. Please try again later. Details: 401 Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [reason: \"ACCESS_TOKEN_TYPE_UNSUPPORTED\"\nmetadata {\n  key: \"service\"\n  value: \"generativelanguage.googleapis.com\"\n}\nmetadata {\n  key: \"method\"\n  value: \"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent\"\n}\n]",
-    "timestamp": "2026-09-18T12:39:19.523437+00:00"
+    "content": "Sorry, I couldn't generate destination recommendations right now. Please try again later. Details: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent', 'service': 'generativelanguage.googleapis.com'}}]}}",
+    "timestamp": "2026-09-18T13:07:42.720177+00:00"
   }
 ]

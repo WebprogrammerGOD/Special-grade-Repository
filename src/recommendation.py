@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 # Credentials are local configuration and must not be committed in source code.
 # Process environment variables take precedence over values in config/.env.
-load_dotenv(CONFIG_DIR / ".env")
+load_dotenv(CONFIG_DIR / ".env", override = True)
 
 st.set_page_config(
     page_title="Viejar Mucho Travel Chatbot",
@@ -22,7 +22,7 @@ st.set_page_config(
     layout="wide",
 )
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY" or "").strip().strip('"').strip("'")
 
 if not GEMINI_API_KEY:
     st.error(
@@ -31,7 +31,8 @@ if not GEMINI_API_KEY:
     )
     st.stop()
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+os.environ.pop("GOOGLE_GENAI_USE_VERTEXAI", None)
+client = genai.Client(api_key=GEMINI_API_KEY, vertexai = False)
 
 # Load configuration
 try:
@@ -73,7 +74,6 @@ Rules:
 - For unsupported requests, say:
   "I do not support this function. Please contact our company's staff via hotline +5251 - 234 - 5678 for assistance."
 """
-
 
 def generate_destination_recommendations(prompt: str, request_type: str) -> str:
     """Generate destination advice without querying local booking datasets."""
