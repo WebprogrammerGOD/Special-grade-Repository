@@ -21,16 +21,15 @@ st.set_page_config(
     layout="wide",
 )
 
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-if not GOOGLE_API_KEY:
+if not GEMINI_API_KEY:
     st.error(
-        "Google API key is missing. Add GOOGLE_API_KEY to config/.env "
+        "Google API key is missing. Add GEMINI_API_KEY to config/.env "
         "(see config/.env.example) or set it as an environment variable."
     )
     st.stop()
 
-genai.configure(api_key=GOOGLE_API_KEY)
 
 
 # Load configuration
